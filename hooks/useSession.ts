@@ -1,8 +1,7 @@
-import { Session, sessionAtom } from "@/atoms/sessionAtom";
+import { JWTPayload, Session, sessionAtom } from "@/atoms/sessionAtom";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import * as SecureStore from "expo-secure-store";
-import { SecureStoreKeys } from "@/constants/SecureStoreKeys";
+import { jwtDecode } from "jwt-decode";
 import { signIn as _signIn, SignInRequest } from "@/services/signIn";
 import { getSessionAsync, setSessionAsync } from "@/lib/session";
 
@@ -31,15 +30,9 @@ export function useSession(): UseSessionState {
             return;
         }
 
-        async function fn() {
-            const storedSessionJson = await SecureStore.getItemAsync(SecureStoreKeys.session);
-
-            if (!storedSessionJson) return;
-
-            await getSessionAsync().then((t) => _setSession(t));
-        }
-
-        fn().finally(() => setIsLoading(false));
+        getSessionAsync()
+            .then((t) => _setSession(t))
+            .finally(() => setIsLoading(false));
     }, [session, _setSession, setIsLoading]);
 
     async function setSession(session: Session | null) {
@@ -53,11 +46,13 @@ export function useSession(): UseSessionState {
 
         if (!token) return;
 
-        setSession({ token });
+        const payload = jwtDecode<JWTPayload>(token);
+
+        setSession({ token, payload });
     }
 
     async function signOut() {
-        setSession(null);
+        await setSession(null);
     }
 
     return {
