@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, FlatList } from "react-native";
+import { StyleSheet, View, FlatList, RefreshControl } from "react-native";
 import { getTravels } from "@/services/getTravels";
 import { TravelDTO } from "@/types/DTOs/travelDTO";
 import { List, FAB } from "react-native-paper";
@@ -8,6 +8,7 @@ import { router } from "expo-router";
 
 export default function TravelsScreen() {
     const [travels, setTravels] = useState<TravelDTO[]>([]);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         getTravels().then((data) => {
@@ -16,6 +17,17 @@ export default function TravelsScreen() {
         });
     }, []);
 
+    async function handleRefresh() {
+        setIsRefreshing(true);
+
+        getTravels()
+            .then((data) => {
+                data.sort((a, b) => a.plannedStartDate.valueOf() - b.plannedStartDate.valueOf());
+                setTravels(data);
+            })
+            .finally(() => setIsRefreshing(false));
+    }
+
     return (
         <View style={styles.container}>
             <FAB icon="plus" style={styles.fab} onPress={() => router.push("/travels/newTravel")} />
@@ -23,6 +35,7 @@ export default function TravelsScreen() {
             <FlatList
                 style={{ width: "100%", paddingHorizontal: 16 }}
                 data={travels}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
                 renderItem={({ item: travel }) => {
                     return (
                         <List.Item
