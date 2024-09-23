@@ -38,4 +38,8 @@ export class DateTimeOffset {
     diff(b: DateTimeOffset, unitOfTime?: unitOfTime.Diff, precise?: boolean) {
         return this._moment.diff(b._moment, unitOfTime, precise);
     }
+
+    toDate() {
+        return this._moment.toDate();
+    }
 }
