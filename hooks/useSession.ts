@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import { SecureStoreKeys } from "@/constants/SecureStoreKeys";
 import { signIn as _signIn, SignInRequest } from "@/services/signIn";
+import { getSessionAsync, setSessionAsync } from "@/lib/session";
 
 type UseSessionStateLoading = {
     isLoading: true;
@@ -35,21 +36,14 @@ export function useSession(): UseSessionState {
 
             if (!storedSessionJson) return;
 
-            try {
-                const storedSession = JSON.parse(storedSessionJson);
-
-                _setSession(storedSession);
-            } catch (error) {
-                console.error(error);
-                return;
-            }
+            await getSessionAsync().then((t) => _setSession(t));
         }
 
         fn().finally(() => setIsLoading(false));
     }, [session, _setSession, setIsLoading]);
 
     async function setSession(session: Session | null) {
-        await SecureStore.setItemAsync(SecureStoreKeys.session, JSON.stringify(session));
+        await setSessionAsync(session);
 
         _setSession(session);
     }
